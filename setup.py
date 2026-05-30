@@ -16,6 +16,9 @@ setup(
         "PyYAML",             # For managing config.yaml
         "requests",           # For dictionary web requests
         "beautifulsoup4",     # Recommended for robust HTML parsing
+        "selenium",           # For dynamic content parsing (optional, advanced)
+        "webdriver-manager",    # To manage Selenium WebDriver binaries
+        "python-dotenv",      # For managing environment variables (e.g. credentials)
     ],
     extras_require={
         "dev": [

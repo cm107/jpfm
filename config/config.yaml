@@ -1,0 +1,46 @@
+# JPFM Application Configuration
+# Central configuration for all application settings
+
+# Dictionary Sources
+jisho:
+  base_url: "https://jisho.org/search/"
+  timeout_seconds: 10
+  max_retries: 3
+  retry_delay_seconds: 3
+
+kotobank:
+  base_url: "https://kotobank.jp/word/"
+  timeout_seconds: 10
+  max_retries: 3
+  retry_delay_seconds: 3
+
+koohii:
+  base_url: "https://kanji.koohii.com/"
+  timeout_seconds: 10
+  max_retries: 3
+  retry_delay_seconds: 3
+
+# Caching
+cache:
+  enabled: true
+  directory: "storage/cache"
+  metadata_format: "json"
+  retention_days: 30
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  console_enabled: true
+  file_enabled: true
+  log_directory: "storage/logs"
+
+# GUI Defaults
+gui:
+  window_width: 1000
+  window_height: 700
+  default_font_size: 11
+
+# Parser Behavior
+parser:
+  fixture_mode: false  # Set to true to use local fixtures instead of live requests
+  fixtures_directory: "tests/fixtures"
