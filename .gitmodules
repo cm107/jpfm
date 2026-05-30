@@ -1,0 +1,3 @@
+[submodule "ref/jp_dict"]
+	path = ref/jp_dict
+	url = https://github.com/cm107/jp_dict.git
