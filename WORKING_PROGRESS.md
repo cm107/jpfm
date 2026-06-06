@@ -36,9 +36,20 @@ This document tracks the milestones and task completion for the Japanese Diction
 ## **Milestone 03: Efficient Pipeline**
 *Goal: Implement the caching layer to prevent redundant web requests.*
 
-- [ ] **Storage Layer**: Implement logic to save and load metadata from the `storage/` directory.
-- [ ] **Cache-Aware Logic**: Ensure the "Dictionary Manager" checks local storage before initiating web requests.
-- [ ] **Metadata Versioning**: Establish a system to handle legacy vs. current data formats in the cache.
+- [x] **Storage Layer** (Phase 1): Implemented cache persistence and versioning.
+  - ✓ `jpfm/storage/storage_service.py` with `StorageService` class.
+  - ✓ Methods: `save(source, word, parsed_data)`, `load(source, word)`, `exists(source, word)`, `list_cached_words(source)`, `clear_cache(source=None)`.
+  - ✓ JSON persistence to `storage/cache/{source}/{word}.json` with metadata (_version, _source, _cached_at).
+  - ✓ 24 comprehensive unit tests in `tests/storage/test_storage_service.py`, all passing.
+  - ✓ Version validation: stale entries are treated as cache misses.
+- [x] **Cache-Aware Logic** (Phase 2): Implemented Dictionary Manager orchestrator.
+  - ✓ `jpfm/services/dictionary_manager.py` with `DictionaryManager` class.
+  - ✓ Parser factories (JishoParserFactory, KotobankParserFactory, KoohiiParserFactory) for fetch/parse coordination.
+  - ✓ Methods: `get_entry(source, word)`, `batch_get_entries(source, words)`, `clear_cache(source=None)`, `list_cached_words(source)`, `get_cache_stats()`.
+  - ✓ Cache-first pattern: checks storage before web requests.
+  - ✓ 30 comprehensive integration tests in `tests/services/test_dictionary_manager.py`, all passing.
+  - ✓ Proper logging of cache hits/misses and fetch errors.
+- [ ] **Metadata Versioning** (Phase 3): Establish schema compatibility and migration.
 
 ---
 
