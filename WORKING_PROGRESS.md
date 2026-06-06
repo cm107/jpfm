@@ -49,7 +49,7 @@ This document tracks the milestones and task completion for the Japanese Diction
   - ✓ Cache-first pattern: checks storage before web requests.
   - ✓ 30 comprehensive integration tests in `tests/services/test_dictionary_manager.py`, all passing.
   - ✓ Proper logging of cache hits/misses and fetch errors.
-- [ ] **Metadata Versioning** (Phase 3): Establish schema compatibility and migration.
+- [x] **Metadata Versioning** (Phase 3): Establish schema compatibility and migration.
 
 ---
 

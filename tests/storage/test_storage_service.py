@@ -105,22 +105,53 @@ class TestStorageServiceSaveLoad:
         result = storage_service.load("jisho", "nonexistent")
         assert result is None
 
-    def test_load_stale_entry_returns_none(self, storage_service):
-        """Test that loading an entry with stale version returns None."""
-        # Manually create a stale cache entry
+    def test_load_legacy_entry_migrates_and_returns_data(self, storage_service):
+        """Test that loading a legacy entry migrates it to the current schema."""
+        # Manually create a legacy cache entry
         entry_path = storage_service.cache_dir / "jisho" / "愛.json"
         entry_path.parent.mkdir(parents=True, exist_ok=True)
 
-        stale_entry = {
+        legacy_entry = {
             "_version": "0.5",  # Old version
             "_source": "jisho",
             "kanji": "愛",
+            "reading": "あい",
         }
         with open(entry_path, "w", encoding="utf-8") as f:
-            json.dump(stale_entry, f)
+            json.dump(legacy_entry, f)
 
         result = storage_service.load("jisho", "愛")
-        assert result is None
+        assert result is not None
+        assert result["kanji"] == "愛"
+        assert result["reading"] == "あい"
+
+        with open(entry_path, "r", encoding="utf-8") as f:
+            migrated_entry = json.load(f)
+
+        assert migrated_entry["_version"] == CURRENT_SCHEMA_VERSION
+        assert migrated_entry["_source"] == "jisho"
+        assert "_cached_at" in migrated_entry
+
+    def test_load_entry_without_version_migrates(self, storage_service):
+        """Test that entries missing `_version` are treated as legacy and migrated."""
+        entry_path = storage_service.cache_dir / "jisho" / "音.json"
+        entry_path.parent.mkdir(parents=True, exist_ok=True)
+
+        legacy_entry = {"kanji": "音", "reading": "おん"}
+        with open(entry_path, "w", encoding="utf-8") as f:
+            json.dump(legacy_entry, f)
+
+        result = storage_service.load("jisho", "音")
+        assert result is not None
+        assert result["kanji"] == "音"
+        assert result["reading"] == "おん"
+
+        with open(entry_path, "r", encoding="utf-8") as f:
+            migrated_entry = json.load(f)
+
+        assert migrated_entry["_version"] == CURRENT_SCHEMA_VERSION
+        assert migrated_entry["_source"] == "jisho"
+        assert "_cached_at" in migrated_entry
 
 
 class TestStorageServiceExists:
@@ -141,20 +172,20 @@ class TestStorageServiceExists:
         """Test that exists returns False for non-existent entries."""
         assert storage_service.exists("jisho", "nonexistent") is False
 
-    def test_exists_stale_entry(self, storage_service):
-        """Test that exists returns False for stale entries."""
-        # Manually create a stale entry
+    def test_exists_legacy_entry_returns_true(self, storage_service):
+        """Test that exists returns True for legacy entries that can be migrated."""
+        # Manually create a legacy entry
         entry_path = storage_service.cache_dir / "jisho" / "愛.json"
         entry_path.parent.mkdir(parents=True, exist_ok=True)
 
-        stale_entry = {
+        legacy_entry = {
             "_version": "0.5",  # Old version
             "kanji": "愛",
         }
         with open(entry_path, "w", encoding="utf-8") as f:
-            json.dump(stale_entry, f)
+            json.dump(legacy_entry, f)
 
-        assert storage_service.exists("jisho", "愛") is False
+        assert storage_service.exists("jisho", "愛") is True
 
 
 class TestStorageServiceListCachedWords:
@@ -185,22 +216,22 @@ class TestStorageServiceListCachedWords:
         # Verify sorted order
         assert result == sorted(result)
 
-    def test_list_cached_words_excludes_stale(self, storage_service):
-        """Test that listing excludes stale entries."""
+    def test_list_cached_words_includes_legacy_entries(self, storage_service):
+        """Test that listing includes legacy entries that can be migrated."""
         # Save a valid entry
         storage_service.save("jisho", "愛", {"kanji": "愛"})
 
-        # Manually create a stale entry
+        # Manually create a legacy entry
         entry_path = storage_service.cache_dir / "jisho" / "行.json"
         entry_path.parent.mkdir(parents=True, exist_ok=True)
-        stale_entry = {"_version": "0.5", "kanji": "行"}
+        legacy_entry = {"_version": "0.5", "kanji": "行"}
         with open(entry_path, "w", encoding="utf-8") as f:
-            json.dump(stale_entry, f)
+            json.dump(legacy_entry, f)
 
         result = storage_service.list_cached_words("jisho")
-        assert len(result) == 1
+        assert len(result) == 2
         assert "愛" in result
-        assert "行" not in result
+        assert "行" in result
 
     def test_list_cached_words_nonexistent_source(self, storage_service):
         """Test listing for a source with no cache directory."""

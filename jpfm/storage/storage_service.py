@@ -15,6 +15,27 @@ from jpfm import get_logger
 
 # Current schema version for cache entries
 CURRENT_SCHEMA_VERSION = "1.0"
+# Recognize older cache entries that can still be migrated to the current schema.
+LEGACY_SCHEMA_VERSIONS = ["0.5"]
+
+
+def _version_to_tuple(version: str) -> tuple:
+    """Convert a schema version string into a comparable tuple."""
+    try:
+        return tuple(int(part) for part in version.split(".") if part.isdigit())
+    except Exception:
+        return ()
+
+
+def _is_legacy_schema_version(version: Optional[str]) -> bool:
+    """Return True if a cached schema version is older than the current schema."""
+    if version is None:
+        return True
+
+    try:
+        return _version_to_tuple(version) < _version_to_tuple(CURRENT_SCHEMA_VERSION)
+    except Exception:
+        return False
 
 
 class StorageService:
@@ -165,11 +186,27 @@ class StorageService:
             # Validate version
             cached_version = cached_entry.get("_version")
             if cached_version != CURRENT_SCHEMA_VERSION:
-                self.logger.warning(
-                    f"Cache entry {source}/{word} has stale version {cached_version}; "
-                    f"expected {CURRENT_SCHEMA_VERSION}"
-                )
-                return None
+                if _is_legacy_schema_version(cached_version):
+                    migrated_entry = self._migrate_entry(cached_entry, source)
+                    if migrated_entry is None:
+                        self.logger.warning(
+                            f"Legacy cache entry {source}/{word} could not be migrated from version {cached_version}"
+                        )
+                        return None
+
+                    with open(entry_path, "w", encoding="utf-8") as f:
+                        json.dump(migrated_entry, f, ensure_ascii=False, indent=2)
+
+                    cached_entry = migrated_entry
+                    self.logger.info(
+                        f"Migrated cache entry {source}/{word} from {cached_version or 'unknown'} to {CURRENT_SCHEMA_VERSION}"
+                    )
+                else:
+                    self.logger.warning(
+                        f"Cache entry {source}/{word} has stale version {cached_version}; "
+                        f"expected {CURRENT_SCHEMA_VERSION}"
+                    )
+                    return None
 
             # Remove metadata before returning
             entry_data = {
@@ -193,7 +230,7 @@ class StorageService:
 
         An entry is valid if:
         1. The file exists on disk.
-        2. The cached version matches `CURRENT_SCHEMA_VERSION`.
+        2. The cached version matches or can be migrated to `CURRENT_SCHEMA_VERSION`.
 
         Args:
             source (str): Parser source (e.g., 'jisho', 'kotobank', 'koohii').
@@ -212,7 +249,10 @@ class StorageService:
                 cached_entry = json.load(f)
 
             cached_version = cached_entry.get("_version")
-            is_valid = cached_version == CURRENT_SCHEMA_VERSION
+            is_valid = (
+                cached_version == CURRENT_SCHEMA_VERSION
+                or _is_legacy_schema_version(cached_version)
+            )
 
             if not is_valid:
                 self.logger.debug(f"Stale cache entry for {source}/{word}")
@@ -249,7 +289,11 @@ class StorageService:
                 try:
                     with open(json_file, "r", encoding="utf-8") as f:
                         entry = json.load(f)
-                    if entry.get("_version") == CURRENT_SCHEMA_VERSION:
+                    cached_version = entry.get("_version")
+                    if (
+                        cached_version == CURRENT_SCHEMA_VERSION
+                        or _is_legacy_schema_version(cached_version)
+                    ):
                         cached_words.append(json_file.stem)
                 except Exception:
                     # Skip malformed entries
@@ -263,6 +307,39 @@ class StorageService:
                 exc_info=True,
             )
             return []
+
+    def _migrate_entry(
+        self, cached_entry: Dict[str, Any], source: str
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Migrate a cache entry from an older schema version to the current schema.
+
+        Args:
+            cached_entry (dict): Raw entry loaded from disk.
+            source (str): Expected parser source for the entry.
+
+        Returns:
+            dict or None: Migrated entry with current schema metadata, or None if migration fails.
+        """
+        current_version = cached_entry.get("_version")
+
+        if current_version == CURRENT_SCHEMA_VERSION:
+            return cached_entry
+
+        if not _is_legacy_schema_version(current_version):
+            return None
+
+        migrated_entry = {
+            **cached_entry,
+            "_version": CURRENT_SCHEMA_VERSION,
+            "_source": cached_entry.get("_source", source),
+            "_cached_at": cached_entry.get(
+                "_cached_at",
+                datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            ),
+        }
+
+        return migrated_entry
 
     def clear_cache(self, source: Optional[str] = None) -> bool:
         """
