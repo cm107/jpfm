@@ -17,6 +17,7 @@ To maintain the standards of the `classifier_app` architecture, all fixture test
 
 ### **Storage and Organization**
 *   **Pathing**: All HTML samples must be stored in the `tests/fixtures/` directory.
+*   **Versioning**: Each parser source uses a versioned fixture layout with `current/` for the latest saved HTML and `legacy/` for historical or fallback samples.
 *   **Naming**: Fixtures should be named descriptively based on the source and word type (e.g., `jisho_verb_taberu.html`).
 
 ### **Execution Rules**

@@ -33,6 +33,7 @@ from bs4 import BeautifulSoup
 try:
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
     from selenium.webdriver.common.by import By
     from selenium.common.exceptions import NoSuchElementException, WebDriverException
     from webdriver_manager.chrome import ChromeDriverManager
@@ -98,11 +99,16 @@ def launch_browser(headless: bool = True):
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1200,800")
     # Use webdriver-manager to get chromedriver
+    driver_path = ChromeDriverManager().install()
     try:
-        driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
+        service = Service(driver_path)
+        driver = webdriver.Chrome(service=service, options=options)
     except TypeError:
         # older selenium signature
-        driver = webdriver.Chrome(ChromeDriverManager().install(), chrome_options=options)
+        try:
+            driver = webdriver.Chrome(executable_path=driver_path, options=options)
+        except TypeError:
+            driver = webdriver.Chrome(driver_path, chrome_options=options)
     return driver
 
 

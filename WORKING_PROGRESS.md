@@ -24,14 +24,12 @@ This document tracks the milestones and task completion for the Japanese Diction
   - ✓ Extracts Reading, Kanji, and Definitions (simplified MVP, deferred complex features).
   - ✓ 28 unit tests, all passing; 100% fixture-based (no live requests during CI).
   - ✓ Test coverage: initialization, parsing, error handling, logging, integration, edge cases.
-- [ ] **Kotobank Parser**: Re-implement with strict error handling and logging.
-- [ ] **Koohii Parser**: Modernize extraction logic and ensure compatibility with modern HTML structures.
- - [x] **Kotobank Parser**: Re-implement with strict error handling and logging.
+- [x] **Kotobank Parser**: Re-implement with strict error handling and logging.
   - ✓ Standalone service at `jpfm/parsers/kotobank_parser.py` with fixture-based tests.
- - [x] **Koohii Parser**: Modernize extraction logic and ensure compatibility with modern HTML structures.
+- [x] **Koohii Parser**: Modernize extraction logic and ensure compatibility with modern HTML structures.
   - ✓ Simplified MVP service at `jpfm/parsers/koohii_parser.py` with fixture-based tests.
-- [ ] **Contract Testing**: Establish versioning strategy for legacy vs current fixtures.
-- [ ] **Validation**: Ensure all parsers pass headless unit tests without making live network requests.
+- [x] **Contract Testing**: Establish versioning strategy for legacy vs current fixtures.
+- [x] **Validation**: Ensure all parsers pass headless unit tests without making live network requests.
 
 ---
 

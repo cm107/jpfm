@@ -91,17 +91,44 @@ class KoohiiParser:
 
     def extract_mnemonic(self) -> str:
         try:
-            # Koohii fixtures will provide .mnemonic class or div#mnemonic
-            node = self.soup.select_one(".mnemonic, #mnemonic, div.mnemonic-text")
-            if node:
-                text = node.get_text(" ", strip=True)
-                self.logger.debug(f"Extracted mnemonic length={len(text)}")
-                return text
+            selectors = [
+                ".mnemonic",
+                "#mnemonic",
+                "div.mnemonic-text",
+                "div.story",
+                "div.ko-MyStory-keyword",
+                "span.ko-MyStory-keyword",
+                "div.ko-MyStoryView-textarea",
+            ]
+            for selector in selectors:
+                node = self.soup.select_one(selector)
+                if node and node.get_text(strip=True):
+                    text = node.get_text(" ", strip=True)
+                    if "click here to enter your story" in text.lower():
+                        self.logger.debug(
+                            f"Skipping placeholder text from selector '{selector}'"
+                        )
+                        continue
+                    self.logger.debug(
+                        f"Extracted mnemonic from selector '{selector}' length={len(text)}"
+                    )
+                    return text
+
+            # Fallback: join a few story lines
+            stories = self.soup.select("div.story")
+            if stories:
+                story_texts = [s.get_text(" ", strip=True) for s in stories[:3] if s.get_text(strip=True)]
+                if story_texts:
+                    result = " \n ".join(story_texts)
+                    self.logger.debug(f"Extracted mnemonic from story blocks length={len(result)}")
+                    return result
 
             # Fallback: take first paragraph
             p = self.soup.find("p")
             if p and p.get_text(strip=True):
-                return p.get_text(strip=True)
+                text = p.get_text(strip=True)
+                self.logger.debug(f"Extracted mnemonic from paragraph length={len(text)}")
+                return text
 
             return ""
         except Exception as e:
@@ -110,7 +137,9 @@ class KoohiiParser:
 
     def _get_mnemonic_html(self) -> str:
         try:
-            node = self.soup.select_one(".mnemonic, #mnemonic, div.mnemonic-text")
+            node = self.soup.select_one(
+                ".mnemonic, #mnemonic, div.mnemonic-text, div.ko-MyStoryView-textarea, div.story"
+            )
             if node:
                 return str(node)
         except Exception:

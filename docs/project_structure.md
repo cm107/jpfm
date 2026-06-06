@@ -12,6 +12,7 @@ This document outlines the directory layout and architectural principles of the 
 *   **`storage/`**: Acts as a local cache for parsed data and metadata. This directory is central to the project's efficiency, ensuring that metadata is never recalculated if a cached version exists.
 *   **`tests/`**: A comprehensive testing suite utilizing `pytest-qt` for automated, headless validation.
     *   **`fixtures/`**: Contains saved HTML samples of target webpages. These are used for **Contract Testing** to verify that the parser remains functional despite changes to external website formats.
+    *   **Fixture versioning**: Each source may contain `current/` and `legacy/` subdirectories to distinguish the latest contract fixtures from earlier historical samples.
 *   **`main.py`**: The primary entry point for the application.
 *   **`WORKING_PROGRESS.md`**: A living document used to track milestone completion and project status.
 
