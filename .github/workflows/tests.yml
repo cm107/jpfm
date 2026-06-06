@@ -38,9 +38,8 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyside6 pytest pytest-qt pytest-xvfb
-        # If you have a requirements file or setup.py:
-        # pip install -e ".[dev]"
+        # Install project and dev dependencies (including beautifulsoup4, selenium, pytest plugins)
+        pip install -e ".[dev]"
 
     - name: Run Headless GUI Tests
       env:
