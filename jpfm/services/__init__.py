@@ -7,5 +7,6 @@ multi-step workflows.
 """
 
 from jpfm.services.dictionary_manager import DictionaryManager
+from jpfm.services.history_import_service import HistoryImportService
 
-__all__ = ["DictionaryManager"]
+__all__ = ["DictionaryManager", "HistoryImportService"]

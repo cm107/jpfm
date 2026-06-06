@@ -65,13 +65,28 @@ This document tracks the milestones and task completion for the Japanese Diction
 ## **Milestone 04.01: Browser History Word List** (Pending)
 *Goal: Implement browser history import and manual word list construction, with GUI-configurable extraction rules.*
 
-- [ ] Draft browser history import design and extraction-rule contract in `docs/browser_history_import.md`.
-- [ ] Add configuration defaults for supported history filenames and extraction patterns.
-- [ ] Define a `HistoryImportService` as the service entry point for recursive snapshot scanning and candidate extraction.
-- [ ] Support manual word addition and merge imported candidates with user-entered terms.
-- [ ] Normalize and deduplicate the generated word list before it enters the parsing pipeline.
-- [ ] Create unit tests for import logic, normalization, rule matching, and manual list behavior.
-- [ ] Wire the workflow into the GUI presenter with passive view controls for import and manual input.
+- [x] Draft browser history import design and extraction-rule contract in `docs/browser_history_import.md`.
+- [x] Add configuration defaults for supported history filenames and extraction patterns.
+- [x] Define a `HistoryImportService` as the service entry point for recursive snapshot scanning and candidate extraction.
+- [x] Support manual word addition and merge imported candidates with user-entered terms.
+- [x] Normalize and deduplicate the generated word list before it enters the parsing pipeline.
+- [x] Create unit tests for import logic, normalization, rule matching, and manual list behavior.
+- [x] Add UI controls for history import and manual word entry.
+- [x] Wire the workflow into the GUI presenter with passive view controls for import and manual input.
+- [x] Add presenter unit tests for history import workflow.
+
+---
+## **Milestone 04.02: Word List Management & Import Visibility** (Pending)
+*Goal: Add list editing, pruning, learned-word exclusion, metadata, parsing orchestration, and sort capabilities before Anki export.*
+
+- [ ] Add a progress bar or progress feedback for browser history import.
+- [ ] Add the ability to remove words from the word list.
+- [ ] Add configurable pruning rules for prohibited characters and strings.
+- [ ] Add support for excluding already-learned words.
+- [ ] Add word metadata tracking: source, timestamps, hit count, and added time.
+- [ ] Add a `Start Parsing` workflow with progress and failure handling.
+- [ ] Add collision resolution and fallback prioritization rules for parsing.
+- [ ] Add word list sorting by metadata and parse-derived criteria.
 
 ---
 ## **Milestone 05: Anki Integration**

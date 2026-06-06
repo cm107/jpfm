@@ -1,9 +1,11 @@
 """Main application window for JPFM."""
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QFileDialog,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -14,6 +16,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QAbstractItemView,
+    QListWidget,
 )
 
 from jpfm.config import GUI_WINDOW_HEIGHT, GUI_WINDOW_WIDTH
@@ -24,6 +27,8 @@ class MainWindow(QMainWindow):
     """Passive view for the JPFM main UI."""
 
     search_requested = Signal(str, str)
+    import_history_requested = Signal()
+    manual_word_added = Signal(str)
 
     def __init__(
         self,
@@ -43,6 +48,7 @@ class MainWindow(QMainWindow):
 
         layout = QVBoxLayout(central_widget)
         controls_layout = QHBoxLayout()
+        import_layout = QHBoxLayout()
 
         self.source_select = QComboBox(self)
         self.source_select.addItems(self.sources)
@@ -55,12 +61,29 @@ class MainWindow(QMainWindow):
         self.search_button = QPushButton("Search", self)
         self.search_button.setObjectName("search_button")
 
+        self.import_history_button = QPushButton("Import History", self)
+        self.import_history_button.setObjectName("import_history_button")
+
         controls_layout.addWidget(self.source_select)
         controls_layout.addWidget(self.search_input)
         controls_layout.addWidget(self.search_button)
+        controls_layout.addWidget(self.import_history_button)
+
+        self.manual_word_input = QLineEdit(self)
+        self.manual_word_input.setPlaceholderText("Add manual word")
+        self.manual_word_input.setObjectName("manual_word_input")
+
+        self.manual_add_button = QPushButton("Add", self)
+        self.manual_add_button.setObjectName("manual_add_button")
+
+        import_layout.addWidget(self.manual_word_input)
+        import_layout.addWidget(self.manual_add_button)
 
         self.status_label = QLabel("Ready", self)
         self.status_label.setObjectName("status_label")
+
+        self.word_list_widget = QListWidget(self)
+        self.word_list_widget.setObjectName("word_list_widget")
 
         self.results_model = EntryTableModel([])
         self.results_view = QTableView(self)
@@ -71,11 +94,17 @@ class MainWindow(QMainWindow):
         self.results_view.setObjectName("results_view")
 
         layout.addLayout(controls_layout)
+        layout.addLayout(import_layout)
+        layout.addWidget(QLabel("Word List", self))
+        layout.addWidget(self.word_list_widget)
         layout.addWidget(self.status_label)
         layout.addWidget(self.results_view)
 
         self.search_button.clicked.connect(self._on_search_clicked)
         self.search_input.returnPressed.connect(self._on_search_clicked)
+        self.import_history_button.clicked.connect(self._on_import_history_clicked)
+        self.manual_add_button.clicked.connect(self._on_manual_add_clicked)
+        self.manual_word_input.returnPressed.connect(self._on_manual_add_clicked)
 
     def _on_search_clicked(self) -> None:
         word = self.search_input.text().strip()
@@ -85,6 +114,30 @@ class MainWindow(QMainWindow):
             return
 
         self.search_requested.emit(source, word)
+
+    def _on_import_history_clicked(self) -> None:
+        self.import_history_requested.emit()
+
+    def _on_manual_add_clicked(self) -> None:
+        word = self.manual_word_input.text().strip()
+        if not word:
+            self.set_status("Please enter a manual word.")
+            return
+
+        self.manual_word_added.emit(word)
+        self.manual_word_input.clear()
+
+    def get_history_folder(self) -> str:
+        return QFileDialog.getExistingDirectory(
+            self,
+            "Select Browser History Root",
+            str(Path.home()),
+        )
+
+    def set_word_list(self, words: List[str]) -> None:
+        self.word_list_widget.clear()
+        for word in words:
+            self.word_list_widget.addItem(word)
 
     def set_results(self, entries: List[Dict[str, Any]]) -> None:
         self.results_model.set_entries(entries)

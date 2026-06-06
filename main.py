@@ -13,7 +13,8 @@ def main() -> int:
     app = QApplication(sys.argv)
     main_window = MainWindow()
     manager = DictionaryManager()
-    DictionaryPresenter(main_window, manager)
+    presenter = DictionaryPresenter(main_window, manager, parent=main_window)
+    main_window.presenter = presenter
     main_window.show()
     return app.exec()
 

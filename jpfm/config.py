@@ -80,6 +80,15 @@ PARSER_FIXTURES_DIRECTORY = (
     _CONFIG.get("parser", {}).get("fixtures_directory", "tests/fixtures")
 )
 
+# Browser history import configuration
+HISTORY_IMPORT_CONFIG = _CONFIG.get("history_import", {})
+HISTORY_IMPORT_SUPPORTED_FILENAMES = HISTORY_IMPORT_CONFIG.get(
+    "supported_filenames", ["BrowserHistory.json", "History.json"]
+)
+HISTORY_IMPORT_EXTRACTION_RULES = HISTORY_IMPORT_CONFIG.get(
+    "extraction_rules", []
+)
+
 # Expose config dict for advanced use cases
 CONFIG = _CONFIG
 

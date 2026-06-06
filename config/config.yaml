@@ -44,3 +44,18 @@ gui:
 parser:
   fixture_mode: false  # Set to true to use local fixtures instead of live requests
   fixtures_directory: "tests/fixtures"
+
+# Browser History Import
+history_import:
+  supported_filenames:
+    - "BrowserHistory.json"
+    - "History.json"
+  extraction_rules:
+    - id: "jisho_search"
+      provider_name: "jisho"
+      matcher:
+        type: "prefix"
+        value: "https://jisho.org/search/"
+      extractor:
+        type: "path_prefix"
+        value: "/search/"
