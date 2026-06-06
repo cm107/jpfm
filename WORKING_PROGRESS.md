@@ -56,13 +56,24 @@ This document tracks the milestones and task completion for the Japanese Diction
 ## **Milestone 04: GUI Development**
 *Goal: Build the user interface using a hybrid MVP/MVC pattern with automated component tests.*
 
-- [ ] **Main Application Window**: Create the primary PySide6 interface.
-- [ ] **Component Tests**: Write unit tests for individual widgets (e.g., verifying "Search" button signals) using **`qtbot`**.
-- [ ] **Results View**: Implement a custom `QAbstractItemModel` for dictionary data, validated by **`qtmodeltester`**.
-- [ ] **Passive View Enforcement**: Ensure no business logic is hardcoded inside widget classes.
+- [x] **Main Application Window**: Create the primary PySide6 interface.
+- [x] **Component Tests**: Write unit tests for individual widgets (e.g., verifying "Search" button signals) using **`qtbot`**.
+- [x] **Results View**: Implement a custom `QAbstractItemModel` for dictionary data, validated by **`qtmodeltester`**.
+- [x] **Passive View Enforcement**: Ensure no business logic is hardcoded inside widget classes.
 
 ---
+## **Milestone 04.01: Browser History Word List** (Pending)
+*Goal: Implement browser history import and manual word list construction, with GUI-configurable extraction rules.*
 
+- [ ] Draft browser history import design and extraction-rule contract in `docs/browser_history_import.md`.
+- [ ] Add configuration defaults for supported history filenames and extraction patterns.
+- [ ] Define a `HistoryImportService` as the service entry point for recursive snapshot scanning and candidate extraction.
+- [ ] Support manual word addition and merge imported candidates with user-entered terms.
+- [ ] Normalize and deduplicate the generated word list before it enters the parsing pipeline.
+- [ ] Create unit tests for import logic, normalization, rule matching, and manual list behavior.
+- [ ] Wire the workflow into the GUI presenter with passive view controls for import and manual input.
+
+---
 ## **Milestone 05: Anki Integration**
 *Goal: Port AnkiConnect functionality into a decoupled GUI service.*
 

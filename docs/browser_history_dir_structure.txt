@@ -1,0 +1,319 @@
+/home/clayton/workspace/data/study/jp_dict_data/browser_history
+├── 20190804
+│   ├── archive_browser.html
+│   └── Chrome
+│       ├── Autofill.json
+│       ├── Bookmarks.html
+│       ├── BrowserHistory.json
+│       ├── Dictionary.csv
+│       ├── Extensions.json
+│       ├── SearchEngines.json
+│       └── SyncSettings.json
+├── 20190815
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190818
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190819
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190822
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190829
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190902
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190910
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190919
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20190930
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20191009
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20191018
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20191030
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20191113
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20191127
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20191216
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200106
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200130
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200229
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200331
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200511
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200708
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200805
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20200908
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20201002
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20201104
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20201202
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210107
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210206
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210305
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210401
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210504
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210522
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210701
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210802
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20210901
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20211001
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20211101
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20211201
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220101
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220201
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220301
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220401
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220501
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220601
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220701
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220801
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20220901
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20221003
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20221102
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20221201
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230101
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230201
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230303
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230401
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230601
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230701
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230801
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20230901
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── BrowserHistory.json
+├── 20231001
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20231101
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20231206
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240127
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240317
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240427
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240608
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240707
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240813
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20240922
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20241110
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20250105
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20250302
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20250405
+│   ├── archive_browser.html
+│   └── Chrome
+│       └── History.json
+├── 20250614
+│   └── Chrome
+│       └── History.json
+├── 20250814
+│   └── Chrome
+│       └── History.json
+├── 20251014
+│   └── Chrome
+│       └── History.json
+├── 20251214
+│   └── Chrome
+│       └── History.json
+├── 20260214
+│   └── Chrome
+│       └── History.json
+└── 20260414
+    └── Chrome
+        └── History.json
+
+158 directories, 158 files
