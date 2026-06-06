@@ -33,7 +33,7 @@ jobs:
       # in a virtual framebuffer
       run: |
         sudo apt-get update
-        sudo apt-get install -y x11-utils libxkbcommon-x11-0
+        sudo apt-get install -y x11-utils libxkbcommon-x11-0 xvfb
 
     - name: Install Python dependencies
       run: |
@@ -50,4 +50,4 @@ jobs:
         # QT_QPA_PLATFORM: offscreen
       run: |
         # pytest-xvfb will automatically start a virtual framebuffer for these tests
-        pytest tests/ --verbose
+        pytest tests/ --verbose --ignore=ref
