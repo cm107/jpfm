@@ -218,6 +218,54 @@ class TestHistoryImportService:
         assert progress_updates[-1][0] == progress_updates[-1][1]
         assert any("Scanning" in message for _, _, message in progress_updates)
 
+    def test_build_word_list_applies_pruning_and_learned_word_rules(self, tmp_path):
+        root = tmp_path / "history_root"
+        root.mkdir()
+
+        entries = [
+            {
+                "title": "食べる - Jisho",
+                "url": "https://jisho.org/search/食べる",
+                "client_id": "1",
+                "time_usec": 100,
+            },
+            {
+                "title": "動く - Jisho",
+                "url": "https://jisho.org/search/動く",
+                "client_id": "2",
+                "time_usec": 200,
+            },
+            {
+                "title": "食べる* - Jisho",
+                "url": "https://jisho.org/search/食べる*",
+                "client_id": "3",
+                "time_usec": 300,
+            },
+        ]
+        history_file = root / "BrowserHistory.json"
+        history_file.write_text(json.dumps({"Browser History": entries}), encoding="utf-8")
+
+        service = HistoryImportService(
+            history_import_config={
+                "supported_filenames": ["BrowserHistory.json", "History.json"],
+                "extraction_rules": [
+                    {
+                        "id": "jisho_search",
+                        "provider_name": "jisho",
+                        "matcher": {"type": "prefix", "value": "https://jisho.org/search/"},
+                        "extractor": {"type": "path_prefix", "value": "/search/"},
+                    }
+                ],
+                "pruning_rules": [{"type": "prohibited_characters", "value": "*"}],
+                "learned_words": ["食べる"],
+            }
+        )
+
+        result = service.build_word_list(str(root), manual_words=["食べる", "動く"])
+
+        words = [item.word for item in result["final_word_list"]]
+        assert words == ["動く"]
+
     def test_discover_history_paths_missing_root_raises(self):
         service = HistoryImportService(
             history_import_config={

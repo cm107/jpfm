@@ -5,19 +5,21 @@ from typing import Any, Dict, List, Optional
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QFileDialog,
+    QAbstractItemView,
     QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
     QMainWindow,
     QPushButton,
     QProgressBar,
     QTableView,
     QVBoxLayout,
     QWidget,
-    QAbstractItemView,
-    QListWidget,
 )
 
 from jpfm.config import GUI_WINDOW_HEIGHT, GUI_WINDOW_WIDTH
@@ -32,6 +34,8 @@ class MainWindow(QMainWindow):
     import_history_requested = Signal()
     manual_word_added = Signal(str)
     word_removal_requested = Signal(str)
+    settings_requested = Signal()
+    settings_saved = Signal(dict)
 
     def __init__(
         self,
@@ -43,6 +47,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("JPFM Dictionary")
         self.resize(GUI_WINDOW_WIDTH, GUI_WINDOW_HEIGHT)
 
+        self._current_pruning_rules: List[Dict[str, Any]] = []
+        self._current_learned_words: List[str] = []
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -67,10 +73,14 @@ class MainWindow(QMainWindow):
         self.import_history_button = QPushButton("Import History", self)
         self.import_history_button.setObjectName("import_history_button")
 
+        self.settings_button = QPushButton("Settings", self)
+        self.settings_button.setObjectName("settings_button")
+
         controls_layout.addWidget(self.source_select)
         controls_layout.addWidget(self.search_input)
         controls_layout.addWidget(self.search_button)
         controls_layout.addWidget(self.import_history_button)
+        controls_layout.addWidget(self.settings_button)
 
         self.manual_word_input = QLineEdit(self)
         self.manual_word_input.setPlaceholderText("Add manual word")
@@ -115,6 +125,7 @@ class MainWindow(QMainWindow):
         self.search_button.clicked.connect(self._on_search_clicked)
         self.search_input.returnPressed.connect(self._on_search_clicked)
         self.import_history_button.clicked.connect(self._on_import_history_clicked)
+        self.settings_button.clicked.connect(self._on_settings_clicked)
         self.manual_add_button.clicked.connect(self._on_manual_add_clicked)
         self.remove_word_button.clicked.connect(self._on_remove_word_clicked)
         self.manual_word_input.returnPressed.connect(self._on_manual_add_clicked)
@@ -148,6 +159,143 @@ class MainWindow(QMainWindow):
 
         word = selected_items[0].text()
         self.word_removal_requested.emit(word)
+
+    def _on_settings_clicked(self) -> None:
+        self.settings_requested.emit()
+        self._show_settings_dialog()
+
+    def _show_settings_dialog(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("User Settings")
+        dialog_layout = QVBoxLayout(dialog)
+
+        pruning_label = QLabel("Pruning rules", dialog)
+        self.pruning_rule_type_combo = QComboBox(dialog)
+        self.pruning_rule_type_combo.addItems(
+            ["prohibited_characters", "prohibited_strings", "regex"]
+        )
+        self.pruning_rule_value_input = QLineEdit(dialog)
+        self.pruning_rule_value_input.setPlaceholderText("Rule value")
+        self.pruning_rule_add_button = QPushButton("Add Rule", dialog)
+        self.pruning_rule_remove_button = QPushButton("Remove Rule", dialog)
+        self.pruning_rules_list = QListWidget(dialog)
+
+        learned_label = QLabel("Learned words", dialog)
+        self.learned_word_input = QLineEdit(dialog)
+        self.learned_word_input.setPlaceholderText("食べる")
+        self.learned_word_add_button = QPushButton("Add Word", dialog)
+        self.learned_word_remove_button = QPushButton("Remove Word", dialog)
+        self.learned_words_list = QListWidget(dialog)
+
+        pruning_entry_layout = QHBoxLayout()
+        pruning_entry_layout.addWidget(self.pruning_rule_type_combo)
+        pruning_entry_layout.addWidget(self.pruning_rule_value_input)
+        pruning_entry_layout.addWidget(self.pruning_rule_add_button)
+        pruning_entry_layout.addWidget(self.pruning_rule_remove_button)
+
+        learned_entry_layout = QHBoxLayout()
+        learned_entry_layout.addWidget(self.learned_word_input)
+        learned_entry_layout.addWidget(self.learned_word_add_button)
+        learned_entry_layout.addWidget(self.learned_word_remove_button)
+
+        dialog_layout.addWidget(pruning_label)
+        dialog_layout.addLayout(pruning_entry_layout)
+        dialog_layout.addWidget(self.pruning_rules_list)
+        dialog_layout.addWidget(learned_label)
+        dialog_layout.addLayout(learned_entry_layout)
+        dialog_layout.addWidget(self.learned_words_list)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(lambda: self._save_settings(dialog))
+        buttons.rejected.connect(dialog.reject)
+        dialog_layout.addWidget(buttons)
+
+        self.pruning_rule_add_button.clicked.connect(self._add_pruning_rule)
+        self.pruning_rule_remove_button.clicked.connect(self._remove_pruning_rule)
+        self.learned_word_add_button.clicked.connect(self._add_learned_word)
+        self.learned_word_remove_button.clicked.connect(self._remove_learned_word)
+
+        self._populate_settings_editors()
+        dialog.show()
+
+    def _populate_settings_editors(self) -> None:
+        if not hasattr(self, "pruning_rules_list") or not hasattr(self, "learned_words_list"):
+            return
+
+        self.pruning_rules_list.clear()
+        for rule in self._current_pruning_rules or []:
+            rule_type = rule.get("type", "")
+            rule_value = rule.get("value", "")
+            self.pruning_rules_list.addItem(f"{rule_type}: {rule_value}")
+
+        self.learned_words_list.clear()
+        for word in self._current_learned_words or []:
+            self.learned_words_list.addItem(word)
+
+    def _add_pruning_rule(self) -> None:
+        rule_type = self.pruning_rule_type_combo.currentText().strip()
+        rule_value = self.pruning_rule_value_input.text().strip()
+        if not rule_value:
+            self.set_status("Please enter a pruning rule value.")
+            return
+
+        self.pruning_rules_list.addItem(f"{rule_type}: {rule_value}")
+        self.pruning_rule_value_input.clear()
+
+    def _remove_pruning_rule(self) -> None:
+        selected_items = self.pruning_rules_list.selectedItems()
+        for item in selected_items:
+            self.pruning_rules_list.takeItem(self.pruning_rules_list.row(item))
+
+    def _add_learned_word(self) -> None:
+        word = self.learned_word_input.text().strip()
+        if not word:
+            self.set_status("Please enter a learned word.")
+            return
+
+        self.learned_words_list.addItem(word)
+        self.learned_word_input.clear()
+
+    def _remove_learned_word(self) -> None:
+        selected_items = self.learned_words_list.selectedItems()
+        for item in selected_items:
+            self.learned_words_list.takeItem(self.learned_words_list.row(item))
+
+    def _collect_pruning_rules(self) -> List[Dict[str, Any]]:
+        pruning_rules: List[Dict[str, Any]] = []
+        for index in range(self.pruning_rules_list.count()):
+            text = self.pruning_rules_list.item(index).text()
+            if ":" not in text:
+                continue
+            rule_type, rule_value = text.split(":", 1)
+            pruning_rules.append({"type": rule_type.strip(), "value": rule_value.strip()})
+        return pruning_rules
+
+    def _collect_learned_words(self) -> List[str]:
+        learned_words: List[str] = []
+        for index in range(self.learned_words_list.count()):
+            learned_words.append(self.learned_words_list.item(index).text().strip())
+        return learned_words
+
+    def _save_settings(self, dialog: Optional[QDialog] = None) -> None:
+        pruning_rules = self._collect_pruning_rules()
+        learned_words = self._collect_learned_words()
+
+        self.settings_saved.emit(
+            {
+                "history_import": {
+                    "pruning_rules": pruning_rules,
+                    "learned_words": learned_words,
+                }
+            }
+        )
+        if dialog is not None:
+            dialog.accept()
+
+    def set_settings_values(self, pruning_rules: Optional[List[Dict[str, Any]]] = None, learned_words: Optional[List[str]] = None) -> None:
+        """Populate the settings dialog fields with the current configuration values."""
+        self._current_pruning_rules = pruning_rules or []
+        self._current_learned_words = learned_words or []
 
     def get_history_folder(self) -> str:
         return QFileDialog.getExistingDirectory(

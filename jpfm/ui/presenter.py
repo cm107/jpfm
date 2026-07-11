@@ -4,6 +4,7 @@ from typing import Dict, Any, List, Optional
 
 from PySide6.QtCore import QObject
 
+from jpfm.config import update_runtime_config
 from jpfm.models.word_list_item import WordListItem
 from jpfm.services.dictionary_manager import DictionaryManager
 from jpfm.services.history_import_service import HistoryImportService
@@ -36,10 +37,28 @@ class DictionaryPresenter(QObject):
         self._view.import_history_requested.connect(self._on_import_history_requested)
         self._view.manual_word_added.connect(self._on_manual_word_added)
         self._view.word_removal_requested.connect(self._on_word_removal_requested)
+        if hasattr(self._view, "settings_requested"):
+            self._view.settings_requested.connect(self._on_settings_requested)
+        if hasattr(self._view, "settings_saved"):
+            self._view.settings_saved.connect(self._on_settings_saved)
 
         self._import_service.progress_updated.connect(self._view.set_import_progress)
         self._import_service.import_finished.connect(self._on_import_finished)
         self._import_service.import_error.connect(self._on_import_error)
+
+    def _on_settings_requested(self) -> None:
+        if not hasattr(self._view, "set_settings_values"):
+            return
+        self._view.set_settings_values(
+            pruning_rules=list(self._import_service.pruning_rules),
+            learned_words=sorted(self._import_service.learned_words),
+        )
+
+    def _on_settings_saved(self, config_data: Dict[str, Any]) -> None:
+        updated_config = update_runtime_config(config_data)
+        history_import_config = updated_config.get("history_import", {})
+        self._import_service.apply_config(history_import_config)
+        self._view.set_status("Updated pruning rules and learned words.")
 
     def _on_search_requested(self, source: str, word: str) -> None:
         self._view.set_status("Searching...")

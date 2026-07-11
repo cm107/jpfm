@@ -65,6 +65,60 @@ def test_manual_add_button_emits_manual_word_added(qtbot):
     assert signal.args == ["食べる"]
 
 
+def test_settings_button_emits_settings_requested(qtbot):
+    window = MainWindow()
+    qtbot.addWidget(window)
+
+    with qtbot.waitSignal(window.settings_requested, timeout=1000) as signal:
+        window.settings_button.click()
+
+    assert signal.args == []
+
+
+def test_settings_dialog_manages_pruning_rules(qtbot):
+    window = MainWindow()
+    qtbot.addWidget(window)
+    window.set_settings_values(pruning_rules=[{"type": "prohibited_characters", "value": "*"}], learned_words=[])
+    window._show_settings_dialog()
+
+    window.pruning_rule_value_input.setText("#")
+    window._add_pruning_rule()
+    assert window.pruning_rules_list.count() == 2
+    assert window.pruning_rules_list.item(1).text() == "prohibited_characters: #"
+
+    window.pruning_rules_list.setCurrentRow(0)
+    window._remove_pruning_rule()
+    assert window.pruning_rules_list.count() == 1
+
+    with qtbot.waitSignal(window.settings_saved, timeout=1000) as signal:
+        window._save_settings(None)
+
+    saved_config = signal.args[0]
+    assert saved_config["history_import"]["pruning_rules"] == [{"type": "prohibited_characters", "value": "#"}]
+
+
+def test_settings_dialog_manages_learned_words(qtbot):
+    window = MainWindow()
+    qtbot.addWidget(window)
+    window.set_settings_values(pruning_rules=[], learned_words=["食べる"])
+    window._show_settings_dialog()
+
+    window.learned_word_input.setText("動く")
+    window._add_learned_word()
+    assert window.learned_words_list.count() == 2
+    assert window.learned_words_list.item(1).text() == "動く"
+
+    window.learned_words_list.setCurrentRow(0)
+    window._remove_learned_word()
+    assert window.learned_words_list.count() == 1
+
+    with qtbot.waitSignal(window.settings_saved, timeout=1000) as signal:
+        window._save_settings(None)
+
+    saved_config = signal.args[0]
+    assert saved_config["history_import"]["learned_words"] == ["動く"]
+
+
 def test_set_word_list_updates_list_widget(qtbot):
     window = MainWindow()
     qtbot.addWidget(window)

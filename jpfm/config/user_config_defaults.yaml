@@ -1,0 +1,6 @@
+# User-configurable defaults for history import behavior.
+# Values in this file are safe package defaults that can be overridden by YAML files
+# stored in the application's storage directory.
+history_import:
+  pruning_rules: []
+  learned_words: []

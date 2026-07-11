@@ -6,18 +6,62 @@ configuration values as module-level constants for use across the application.
 """
 
 import logging
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 import yaml
 
 # Path to config.yaml
 CONFIG_FILE = Path(__file__).parent.parent / "config" / "config.yaml"
+USER_CONFIG_DEFAULTS_FILE = Path(__file__).parent / "config" / "user_config_defaults.yaml"
+STORAGE_CONFIG_ROOT = Path(__file__).parent.parent / "storage"
 
 
-def _load_config() -> Dict[str, Any]:
+def _merge_config(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Recursively merge two configuration dictionaries."""
+    merged = deepcopy(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _merge_config(merged[key], value)
+        else:
+            merged[key] = deepcopy(value)
+    return merged
+
+
+def _load_yaml_file(path: Path) -> Dict[str, Any]:
+    """Load a YAML file into a dictionary if it exists."""
+    if not path.exists():
+        return {}
+
+    with path.open("r", encoding="utf-8") as handle:
+        loaded = yaml.safe_load(handle) or {}
+
+    if not isinstance(loaded, dict):
+        return {}
+
+    return loaded
+
+
+def _iter_storage_override_files(storage_root: Optional[Path] = None) -> List[Path]:
+    """Return candidate YAML override files stored under the storage directory."""
+    root = storage_root or STORAGE_CONFIG_ROOT
+    candidates = [
+        root / "config" / "user_config.yaml",
+        root / "config" / "user_config.yml",
+        root / "user_config.yaml",
+        root / "user_config.yml",
+    ]
+    return [path for path in candidates if path.exists()]
+
+
+def _load_config(
+    config_file: Optional[Path] = None,
+    user_defaults_file: Optional[Path] = None,
+    storage_root: Optional[Path] = None,
+) -> Dict[str, Any]:
     """
-    Load and parse config.yaml.
+    Load and merge the base config with user-configurable defaults and storage overrides.
 
     Returns:
         Dict: Parsed configuration dictionary.
@@ -26,14 +70,16 @@ def _load_config() -> Dict[str, Any]:
         FileNotFoundError: If config.yaml does not exist.
         yaml.YAMLError: If config.yaml is malformed.
     """
-    if not CONFIG_FILE.exists():
-        raise FileNotFoundError(f"Configuration file not found: {CONFIG_FILE}")
+    base_config_path = config_file or CONFIG_FILE
+    if not base_config_path.exists():
+        raise FileNotFoundError(f"Configuration file not found: {base_config_path}")
 
-    with open(CONFIG_FILE, "r") as f:
-        config = yaml.safe_load(f)
+    config = _load_yaml_file(base_config_path)
+    defaults = _load_yaml_file(user_defaults_file or USER_CONFIG_DEFAULTS_FILE)
+    config = _merge_config(config, defaults)
 
-    if config is None:
-        config = {}
+    for override_path in _iter_storage_override_files(storage_root):
+        config = _merge_config(config, _load_yaml_file(override_path))
 
     return config
 
@@ -91,6 +137,37 @@ HISTORY_IMPORT_EXTRACTION_RULES = HISTORY_IMPORT_CONFIG.get(
 
 # Expose config dict for advanced use cases
 CONFIG = _CONFIG
+
+
+def write_user_config(config_data: Dict[str, Any], storage_root: Optional[Path] = None) -> Path:
+    """Persist user-configurable settings to a YAML override file in the storage tree."""
+    root = storage_root or STORAGE_CONFIG_ROOT
+    override_path = root / "config" / "user_config.yaml"
+    override_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with override_path.open("w", encoding="utf-8") as handle:
+        yaml.safe_dump(config_data or {}, handle, sort_keys=False)
+
+    return override_path
+
+
+def update_runtime_config(
+    config_data: Dict[str, Any],
+    storage_root: Optional[Path] = None,
+) -> Dict[str, Any]:
+    """Persist user-configurable settings and update the in-memory runtime config."""
+    write_user_config(config_data, storage_root=storage_root)
+
+    global _CONFIG, CONFIG
+    _CONFIG = _load_config(
+        config_file=CONFIG_FILE,
+        user_defaults_file=USER_CONFIG_DEFAULTS_FILE,
+        storage_root=storage_root,
+    )
+    CONFIG.clear()
+    CONFIG.update(_CONFIG)
+    return CONFIG
+
 
 # Log configuration loaded
 _log = logging.getLogger(__name__)

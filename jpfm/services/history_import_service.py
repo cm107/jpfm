@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Set
 from urllib.parse import parse_qs, unquote, urlparse
 
 from PySide6.QtCore import QCoreApplication, QObject, Signal
@@ -144,17 +144,38 @@ class HistoryImportService(QObject):
     ) -> None:
         super().__init__(parent)
         config = history_import_config or CONFIG.get("history_import", {})
-        self.supported_filenames = config.get(
-            "supported_filenames", self.DEFAULT_SUPPORTED_FILENAMES
-        )
-        self.rules = self._load_rules(config.get("extraction_rules", self.DEFAULT_EXTRACTION_RULES))
+        self.supported_filenames = self.DEFAULT_SUPPORTED_FILENAMES
+        self.rules = []
+        self.pruning_rules = []
+        self.learned_words = set()
         self.logger = logger or get_logger(__name__)
+        self.apply_config(config)
 
         self.logger.debug(
             "Initialized HistoryImportService",
             extra={
                 "supported_filenames": self.supported_filenames,
                 "rule_ids": [rule.id for rule in self.rules],
+            },
+        )
+
+    def apply_config(self, history_import_config: Optional[Dict[str, Any]] = None) -> None:
+        """Apply a history-import config payload to the service state."""
+        config = history_import_config or CONFIG.get("history_import", {})
+        self.supported_filenames = config.get(
+            "supported_filenames", self.DEFAULT_SUPPORTED_FILENAMES
+        )
+        self.rules = self._load_rules(config.get("extraction_rules", self.DEFAULT_EXTRACTION_RULES))
+        self.pruning_rules = self._load_pruning_rules(config.get("pruning_rules", []))
+        self.learned_words = self._load_learned_words(config)
+
+        self.logger.debug(
+            "Applied history import config",
+            extra={
+                "supported_filenames": self.supported_filenames,
+                "rule_ids": [rule.id for rule in self.rules],
+                "pruning_rules": self.pruning_rules,
+                "learned_words_count": len(self.learned_words),
             },
         )
 
@@ -168,6 +189,47 @@ class HistoryImportService(QObject):
                 continue
             rules.append(HistoryExtractionRule.from_dict(rule_config))
         return rules
+
+    @staticmethod
+    def _load_pruning_rules(rule_configs: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+        rules: List[Dict[str, Any]] = []
+        for rule_config in rule_configs or []:
+            if not isinstance(rule_config, dict):
+                continue
+            rule_type = str(rule_config.get("type", "")).strip().lower()
+            value = rule_config.get("value")
+            if not rule_type or value is None:
+                continue
+            rules.append({"type": rule_type, "value": value})
+        return rules
+
+    def _load_learned_words(self, config: Dict[str, Any]) -> Set[str]:
+        learned_words: List[str] = []
+        for raw_value in config.get("learned_words", []) or []:
+            normalized = self.normalize_word(str(raw_value))
+            if normalized:
+                learned_words.append(normalized)
+
+        learned_words_file = config.get("learned_words_file")
+        if learned_words_file:
+            try:
+                with Path(learned_words_file).open("r", encoding="utf-8") as handle:
+                    for line in handle:
+                        normalized = self.normalize_word(line)
+                        if normalized:
+                            learned_words.append(normalized)
+            except FileNotFoundError:
+                self.logger.warning(
+                    "Learned words file not found",
+                    extra={"path": learned_words_file},
+                )
+            except OSError as exc:
+                self.logger.warning(
+                    "Failed to load learned words file",
+                    extra={"path": learned_words_file, "error": str(exc)},
+                )
+
+        return {word for word in learned_words if word}
 
     def discover_history_paths(self, root_path: str) -> List[Path]:
         root = Path(root_path)
@@ -232,9 +294,13 @@ class HistoryImportService(QObject):
         self._emit_progress(len(history_paths), len(history_paths), "Extracting candidates...")
         merged_candidates = self._dedupe_candidates(candidates)
 
+        filtered_candidates = [
+            candidate for candidate in merged_candidates if self._should_include_word(candidate.normalized_word)
+        ]
+
         # Build WordListItem objects from history candidates
         history_items: List[WordListItem] = []
-        for candidate in merged_candidates:
+        for candidate in filtered_candidates:
             # Convert browse_timestamp (microseconds since epoch) to ISO format
             # If timestamp is 0, use current time
             if candidate.browse_timestamp > 0:
@@ -265,7 +331,7 @@ class HistoryImportService(QObject):
         manual_items: List[WordListItem] = []
         for manual_word in manual_words_list:
             normalized = self.normalize_word(manual_word)
-            if not normalized:
+            if not normalized or not self._should_include_word(normalized):
                 continue
             
             # Check if word already exists in history items
@@ -288,8 +354,12 @@ class HistoryImportService(QObject):
         all_items.sort(key=lambda x: x.word)
 
         result = {
-            "candidates": [candidate.to_dict() for candidate in merged_candidates],
-            "manual_words": [self.normalize_word(w) for w in manual_words_list if self.normalize_word(w)],
+            "candidates": [candidate.to_dict() for candidate in filtered_candidates],
+            "manual_words": [
+                normalized
+                for normalized in [self.normalize_word(w) for w in manual_words_list if self.normalize_word(w)]
+                if self._should_include_word(normalized)
+            ],
             "final_word_list": all_items,
         }
         self._emit_progress(len(history_paths), len(history_paths), "Import complete")
@@ -390,6 +460,35 @@ class HistoryImportService(QObject):
         normalized = normalized.replace("\u3000", " ")
         normalized = normalized.strip()
         return normalized
+
+    def _should_include_word(self, word: str) -> bool:
+        """Return whether a word should be kept after pruning and learned-word exclusion."""
+        normalized_word = self.normalize_word(word)
+        if not normalized_word:
+            return False
+        if normalized_word in self.learned_words:
+            return False
+        return not self._matches_pruning_rules(normalized_word)
+
+    def _matches_pruning_rules(self, word: str) -> bool:
+        """Return whether a word violates the configured pruning rules."""
+        for rule in self.pruning_rules:
+            rule_type = str(rule.get("type", "")).strip().lower()
+            rule_value = rule.get("value")
+            if not rule_type or not isinstance(rule_value, str):
+                continue
+
+            if rule_type == "prohibited_characters" and any(char in word for char in rule_value):
+                return True
+            if rule_type == "prohibited_strings" and rule_value in word:
+                return True
+            if rule_type == "regex":
+                try:
+                    if re.search(rule_value, word):
+                        return True
+                except re.error:
+                    continue
+        return False
 
     @staticmethod
     def _dedupe_candidates(candidates: List[HistoryCandidate]) -> List[HistoryCandidate]:
