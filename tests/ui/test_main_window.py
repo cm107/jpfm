@@ -2,6 +2,7 @@
 
 from PySide6.QtCore import Qt
 
+from jpfm.models.word_list_item import WordListItem
 from jpfm.ui.main_window import MainWindow
 
 
@@ -68,7 +69,11 @@ def test_set_word_list_updates_list_widget(qtbot):
     window = MainWindow()
     qtbot.addWidget(window)
 
-    window.set_word_list(["食べる", "動く"])
+    items = [
+        WordListItem.from_word(word="食べる"),
+        WordListItem.from_word(word="動く"),
+    ]
+    window.set_word_list(items)
 
     assert window.word_list_widget.count() == 2
     assert window.word_list_widget.item(0).text() == "食べる"
@@ -88,7 +93,9 @@ def test_manual_add_button_updates_word_list_with_presenter(qtbot):
     dummy_manager = MagicMock(spec=DictionaryManager)
     dummy_service = MagicMock(spec=HistoryImportService)
     dummy_service.normalize_word.side_effect = lambda value: value.strip()
-    dummy_service.build_word_list.return_value = {"final_word_list": ["食べる"]}
+    
+    word_items = [WordListItem.from_word(word="食べる", source="manual")]
+    dummy_service.build_word_list.return_value = {"final_word_list": word_items}
 
     presenter = DictionaryPresenter(window, dummy_manager, history_import_service=dummy_service)
 
@@ -97,4 +104,5 @@ def test_manual_add_button_updates_word_list_with_presenter(qtbot):
 
     assert window.word_list_widget.count() == 1
     assert window.word_list_widget.item(0).text() == "食べる"
-    assert window.status_label.text() == "Manual words: 1 added."
+    # Status message changed with new presenter logic
+    assert "Added manual word" in window.status_label.text()

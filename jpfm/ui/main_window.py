@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMainWindow,
     QPushButton,
+    QProgressBar,
     QTableView,
     QVBoxLayout,
     QWidget,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from jpfm.config import GUI_WINDOW_HEIGHT, GUI_WINDOW_WIDTH
+from jpfm.models.word_list_item import WordListItem
 from jpfm.ui.entry_table_model import EntryTableModel
 
 
@@ -29,6 +31,7 @@ class MainWindow(QMainWindow):
     search_requested = Signal(str, str)
     import_history_requested = Signal()
     manual_word_added = Signal(str)
+    word_removal_requested = Signal(str)
 
     def __init__(
         self,
@@ -76,14 +79,22 @@ class MainWindow(QMainWindow):
         self.manual_add_button = QPushButton("Add", self)
         self.manual_add_button.setObjectName("manual_add_button")
 
+        self.remove_word_button = QPushButton("Remove Selected", self)
+        self.remove_word_button.setObjectName("remove_word_button")
+
         import_layout.addWidget(self.manual_word_input)
         import_layout.addWidget(self.manual_add_button)
+        import_layout.addWidget(self.remove_word_button)
 
         self.status_label = QLabel("Ready", self)
         self.status_label.setObjectName("status_label")
 
         self.word_list_widget = QListWidget(self)
         self.word_list_widget.setObjectName("word_list_widget")
+
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setObjectName("import_progress_bar")
+        self.progress_bar.setVisible(False)
 
         self.results_model = EntryTableModel([])
         self.results_view = QTableView(self)
@@ -97,6 +108,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(import_layout)
         layout.addWidget(QLabel("Word List", self))
         layout.addWidget(self.word_list_widget)
+        layout.addWidget(self.progress_bar)
         layout.addWidget(self.status_label)
         layout.addWidget(self.results_view)
 
@@ -104,6 +116,7 @@ class MainWindow(QMainWindow):
         self.search_input.returnPressed.connect(self._on_search_clicked)
         self.import_history_button.clicked.connect(self._on_import_history_clicked)
         self.manual_add_button.clicked.connect(self._on_manual_add_clicked)
+        self.remove_word_button.clicked.connect(self._on_remove_word_clicked)
         self.manual_word_input.returnPressed.connect(self._on_manual_add_clicked)
 
     def _on_search_clicked(self) -> None:
@@ -127,6 +140,15 @@ class MainWindow(QMainWindow):
         self.manual_word_added.emit(word)
         self.manual_word_input.clear()
 
+    def _on_remove_word_clicked(self) -> None:
+        selected_items = self.word_list_widget.selectedItems()
+        if not selected_items:
+            self.set_status("Please select a word to remove.")
+            return
+
+        word = selected_items[0].text()
+        self.word_removal_requested.emit(word)
+
     def get_history_folder(self) -> str:
         return QFileDialog.getExistingDirectory(
             self,
@@ -134,10 +156,30 @@ class MainWindow(QMainWindow):
             str(Path.home()),
         )
 
-    def set_word_list(self, words: List[str]) -> None:
+    def set_word_list(self, items: List[WordListItem]) -> None:
+        """Set the word list display from a list of WordListItem objects.
+        
+        Args:
+            items: List of WordListItem to display.
+        """
         self.word_list_widget.clear()
-        for word in words:
-            self.word_list_widget.addItem(word)
+        for item in items:
+            self.word_list_widget.addItem(item.word)
+
+    def set_import_progress(self, current: Optional[int], total: Optional[int], message: str) -> None:
+        """Show or update the import progress bar."""
+        if total is None or total <= 0:
+            self.progress_bar.setVisible(False)
+            return
+
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setRange(0, total)
+        self.progress_bar.setValue(current or 0)
+        self.progress_bar.setFormat(f"{message} ({current}/{total})")
+
+    def hide_import_progress(self) -> None:
+        """Hide the import progress bar."""
+        self.progress_bar.setVisible(False)
 
     def set_results(self, entries: List[Dict[str, Any]]) -> None:
         self.results_model.set_entries(entries)

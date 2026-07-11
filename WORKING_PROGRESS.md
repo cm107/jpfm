@@ -79,14 +79,16 @@ This document tracks the milestones and task completion for the Japanese Diction
 ## **Milestone 04.02: Word List Management & Import Visibility** (Pending)
 *Goal: Add list editing, pruning, learned-word exclusion, metadata, parsing orchestration, and sort capabilities before Anki export.*
 
-- [ ] Add a progress bar or progress feedback for browser history import.
-- [ ] Add the ability to remove words from the word list.
-- [ ] Add configurable pruning rules for prohibited characters and strings.
-- [ ] Add support for excluding already-learned words.
-- [ ] Add word metadata tracking: source, timestamps, hit count, and added time.
-- [ ] Add a `Start Parsing` workflow with progress and failure handling.
-- [ ] Add collision resolution and fallback prioritization rules for parsing.
-- [ ] Add word list sorting by metadata and parse-derived criteria.
+*Current implementation order: metadata foundation → import visibility → list editing → pruning/filtering → parsing workflow → sorting.*
+
+- [x] Add word metadata tracking: source, timestamps, hit count, and added time. (Phase 1 complete)
+- [x] Add a progress bar or progress feedback for browser history import. (Phase 2 complete)
+- [x] Add the ability to remove words from the word list. (Phase 2 complete)
+- [ ] Add configurable pruning rules for prohibited characters and strings. (Phase 3)
+- [ ] Add support for excluding already-learned words. (Phase 3)
+- [ ] Add a `Start Parsing` workflow with progress and failure handling. (Phase 4)
+- [ ] Add collision resolution and fallback prioritization rules for parsing. (Phase 4)
+- [ ] Add word list sorting by metadata and parse-derived criteria. (Phase 5)
 
 ---
 ## **Milestone 05: Anki Integration**
