@@ -12,7 +12,7 @@ This is an attempt at redoing my implementation of my jp_dict repository, which 
 
 This project is an attempt to redo the jp_dict project from scratch. This time, we will enforce proper coding guidelines, directory structure, unit tests, and documentation. The hope is that this will enable a consistent development pipeline that can be maintained even after long periods of inactivity.
 
-## Things That Need To Be Added To WORKING_PROGRESS.md
+## Brainstorming For Milestone 04.02 (Delete this section after the milestone is completed)
 * Right now I can't find any informative logs being created under `storeage/logs/` that reflect the events that were fired during a `python main.py` session. We need to add more informative logs to the app and also separate logs execution timestamps.
 * Right now we can add words to the word list manually, and also import words from the browser history. However, we still need to implement the following functionality:
   * A progress bar for the "Import History" process. Right now the user has no idea how much longer to wait until the process finishes.

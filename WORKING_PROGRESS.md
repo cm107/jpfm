@@ -91,6 +91,11 @@ This document tracks the milestones and task completion for the Japanese Diction
 - [x] Add a `File > Parsed Cache` management dialog for refreshing, clearing selected entries, and clearing all cached JSON data while preserving `.gitkeep` and `.gitignore`. (Phase 4)
 - [x] Fix full-word Jisho reading extraction for okurigana and compound readings, including log-derived regression cases and parser safeguards against kanji leaking into the reading field. (Phase 4)
 - [x] Include `search_word` in Jisho parse logs to improve debugging of cache misses, parsing failures, and incorrect reading cases. (Phase 4)
+- [ ] Add Search Result Match Resolution docs and plan:
+  - `docs/legacy_search_result_match_resolution.md` — legacy behavior summary
+  - `docs/milestone_04_02_search_result_match_resolution.md` — detailed implementation plan
+  (Phase 4)
+- [ ] Implement `DictionaryMatchResolver` and tests; integrate into `DictionaryManager` and `StorageService` (Phase 4)
 - [ ] Add collision resolution and fallback prioritization rules for parsing. (Phase 4)
 - [ ] Add word list sorting by metadata and parse-derived criteria. (Phase 5)
 
