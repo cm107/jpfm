@@ -54,6 +54,25 @@ def test_import_history_button_emits_import_history_requested(qtbot):
     assert signal.args == []
 
 
+def test_start_parsing_button_toggles_between_start_and_cancel(qtbot):
+    window = MainWindow()
+    qtbot.addWidget(window)
+
+    assert window.start_parsing_button.text() == "Start Parsing"
+
+    with qtbot.waitSignal(window.start_parsing, timeout=1000) as signal:
+        window.start_parsing_button.click()
+
+    assert window.start_parsing_button.text() == "Cancel"
+    assert signal.args == []
+
+    with qtbot.waitSignal(window.cancel_parsing, timeout=1000) as signal:
+        window.start_parsing_button.click()
+
+    assert window.start_parsing_button.text() == "Start Parsing"
+    assert signal.args == []
+
+
 def test_manual_add_button_emits_manual_word_added(qtbot):
     window = MainWindow()
     qtbot.addWidget(window)

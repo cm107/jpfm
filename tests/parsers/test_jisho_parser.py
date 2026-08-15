@@ -195,6 +195,111 @@ class TestJishoParserErrorHandling:
         
         assert reading == ""
 
+    def test_extract_reading_includes_okurigana(self):
+        """Test extract_reading keeps the full word reading including okurigana."""
+        html = """
+        <html><body>
+            <div class="concept_light clearfix">
+                <span class="furigana"><span class="kanji-1-up">か</span></span>
+                <span class="text">駆<span>られる</span></span>
+            </div>
+        </body></html>
+        """
+        parser = JishoParser(html)
+        reading = parser.extract_reading()
+
+        assert reading == "かられる"
+
+    @pytest.mark.parametrize(
+        ("word", "reading"),
+        [
+            ("ガタが来る", "ガタがくる"),
+            ("我鳴る", "がなる"),
+            ("がま口", "がまぐち"),
+            ("がら空き", "がらあき"),
+            ("雁字搦め", "がんじがらめ"),
+            ("きな臭い", "きなくさい"),
+            ("錐揉み", "きりもみ"),
+        ],
+    )
+    def test_extract_reading_handles_okurigana_and_compound_readings(self, word, reading):
+        """Test that full readings include okurigana across common Jisho edge cases."""
+        html = f"""
+        <html><body>
+            <div class="concept_light clearfix">
+                <span class="furigana">{self._furigana_for(word)}</span>
+                <span class="text">{self._text_for(word)}</span>
+            </div>
+        </body></html>
+        """
+        parser = JishoParser(html)
+        assert parser.extract_reading() == reading
+
+    def test_extract_reading_additional_log_cases(self):
+        """Regression tests for specific real-world cases found in logs.
+
+        Cases:
+        - 足掻く -> あがく
+        - 胡座をかく -> あぐらをかく
+        - 天晴れ -> あっぱれ
+        """
+        cases = [
+            (
+                "<html><body>"
+                "<div class=\"concept_light clearfix\">"
+                "<span class=\"furigana\"><span class=\"kanji-1-up\">あが</span></span>"
+                "<span class=\"text\">足掻<span>く</span></span>"
+                "</div></body></html>",
+                "あがく",
+            ),
+            (
+                "<html><body>"
+                "<div class=\"concept_light clearfix\">"
+                "<span class=\"furigana\"><span class=\"kanji-1-up\">あぐら</span></span>"
+                "<span class=\"text\">胡坐<span>を</span><span>かく</span></span>"
+                "</div></body></html>",
+                "あぐらをかく",
+            ),
+            (
+                "<html><body>"
+                "<div class=\"concept_light clearfix\">"
+                "<span class=\"furigana\"><span class=\"kanji-1-up\">あっぱ</span></span>"
+                "<span class=\"text\">天晴<span>れ</span></span>"
+                "</div></body></html>",
+                "あっぱれ",
+            ),
+        ]
+
+        for html, expected in cases:
+            parser = JishoParser(html)
+            assert parser.extract_reading() == expected
+
+    @staticmethod
+    def _furigana_for(word):
+        mapping = {
+            "ガタが来る": "<span class=\"kanji-1-up kanji\">く</span>",
+            "我鳴る": "<ruby class=\"furigana-justify\"><rb>我鳴</rb><rt>がな</rt></ruby>",
+            "がま口": "<span class=\"kanji-2-up kanji\">ぐち</span>",
+            "がら空き": "<span class=\"kanji-1-up kanji\">あ</span>",
+            "雁字搦め": "<span class=\"kanji-2-up kanji\">がん</span><span class=\"kanji-1-up kanji\">じ</span><span class=\"kanji-2-up kanji\">がら</span>",
+            "きな臭い": "<span class=\"kanji-2-up kanji\">くさ</span>",
+            "錐揉み": "<span class=\"kanji-2-up kanji\">きり</span><span class=\"kanji-1-up kanji\">も</span>",
+        }
+        return mapping[word]
+
+    @staticmethod
+    def _text_for(word):
+        mapping = {
+            "ガタが来る": "<span>ガ</span><span>タ</span><span>が</span>来<span>る</span>",
+            "我鳴る": "我鳴<span>る</span>",
+            "がま口": "<span>が</span><span>ま</span>口",
+            "がら空き": "<span>が</span><span>ら</span>空<span>き</span>",
+            "雁字搦め": "雁字搦<span>め</span>",
+            "きな臭い": "<span>き</span><span>な</span>臭<span>い</span>",
+            "錐揉み": "錐揉<span>み</span>",
+        }
+        return mapping[word]
+
     def test_extract_kanji_with_empty_entry(self):
         """Test extract_kanji with minimal HTML returns empty string."""
         html = "<html><body></body></html>"

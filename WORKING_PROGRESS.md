@@ -87,7 +87,10 @@ This document tracks the milestones and task completion for the Japanese Diction
 - [x] Add configurable pruning rules for prohibited characters and strings. (Phase 3 complete)
 - [x] Add support for excluding already-learned words. (Phase 3 complete)
 - [x] Add a user interface for configuring pruning rules and learned words, including list widgets and add/remove controls. (Phase 3 complete)
-- [ ] Add a `Start Parsing` workflow with progress and failure handling. (Phase 4)
+- [x] Add a `Start Parsing` workflow with progress and failure handling. (Phase 4)
+- [x] Add a `File > Parsed Cache` management dialog for refreshing, clearing selected entries, and clearing all cached JSON data while preserving `.gitkeep` and `.gitignore`. (Phase 4)
+- [x] Fix full-word Jisho reading extraction for okurigana and compound readings, including log-derived regression cases and parser safeguards against kanji leaking into the reading field. (Phase 4)
+- [x] Include `search_word` in Jisho parse logs to improve debugging of cache misses, parsing failures, and incorrect reading cases. (Phase 4)
 - [ ] Add collision resolution and fallback prioritization rules for parsing. (Phase 4)
 - [ ] Add word list sorting by metadata and parse-derived criteria. (Phase 5)
 

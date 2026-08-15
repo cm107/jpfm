@@ -6,6 +6,7 @@ The parser is decoupled from GUI logic and communicates via structured TypedDict
 """
 
 import logging
+import unicodedata
 from typing import Dict, List, Optional, TypedDict
 
 from bs4 import BeautifulSoup
@@ -104,7 +105,7 @@ class JishoParser:
 
             if not reading and not kanji:
                 self.logger.error(
-                    "Failed to extract both reading and kanji from entry"
+                    f"Failed to extract both reading and kanji from entry (search_word={word})"
                 )
                 return None
 
@@ -116,7 +117,7 @@ class JishoParser:
             }
 
             self.logger.info(
-                f"Successfully parsed entry: kanji='{kanji}', reading='{reading}', "
+                f"Successfully parsed entry: search_word={word}, kanji='{kanji}', reading='{reading}', "
                 f"definitions_count={len(definitions)}"
             )
             return entry
@@ -125,41 +126,124 @@ class JishoParser:
             self.logger.error(f"Exception during parse: {e}", exc_info=True)
             return None
 
+    @staticmethod
+    def _is_kana_char(char: str) -> bool:
+        """Return True when the character is hiragana or katakana."""
+        if not char:
+            return False
+        if char in {"ー", "〜"}:
+            return True
+        name = unicodedata.name(char, "")
+        return "HIRAGANA" in name or "KATAKANA" in name
+
+    @staticmethod
+    def _normalized_text(value: str) -> str:
+        return value.replace("\n", "").replace(" ", "")
+
+    @staticmethod
+    def _collect_nonempty_text(tags: List) -> List[str]:
+        values: List[str] = []
+        for tag in tags:
+            text = tag.get_text(separator="", strip=True)
+            if text:
+                values.append(text)
+        return values
+
     def extract_reading(self) -> str:
         """
-        Extract the reading (furigana/hiragana) from the entry.
+        Extract the full reading for the entry, including okurigana.
 
-        This method attempts to extract the reading using CSS selectors
-        that target the furigana span elements in the entry.
+        Jisho often splits the reading into a furigana root and a kana suffix
+        (`okurigana`) across separate spans. When that happens, we need to
+        combine the root with the remaining kana text to get the full word
+        reading rather than only the kanji reading.
 
         Returns:
             str: The extracted reading, or empty string if not found.
         """
         try:
-            # Find the main entry container
             entry_container = self.soup.find("div", class_="concept_light clearfix")
             if not entry_container:
                 self.logger.warning("Entry container not found: div.concept_light.clearfix")
                 return ""
 
-            # Try to find furigana/reading
-            # Jisho structure: span.furigana with nested span.kanji-*-up for furigana chars
             furigana_span = entry_container.find("span", class_="furigana")
+            text_span = entry_container.find("span", class_="text")
+
+            furigana_parts = []
             if furigana_span:
-                # Extract all text content from furigana span (includes small kanji-up spans)
-                reading_parts = []
-                for element in furigana_span.children:
-                    if isinstance(element, str):
-                        reading_parts.append(element.strip())
-                    elif element.name == "span" and "kanji" in element.get("class", []):
-                        reading_parts.append(element.get_text(strip=True))
-                
-                reading = "".join(reading_parts).strip()
+                ruby_rt = furigana_span.find("rt")
+                if ruby_rt and ruby_rt.get_text(strip=True):
+                    rt_text = ruby_rt.get_text(strip=True)
+                    ruby_base = furigana_span.find("rb")
+                    if ruby_base and len(ruby_base.get_text(strip=True)) == len(rt_text):
+                        furigana_parts = list(rt_text)
+                    else:
+                        furigana_parts = [rt_text]
+                    if furigana_span.find_all("rt") and len(furigana_span.find_all("rt")) > 1:
+                        furigana_parts = [tag.get_text(strip=True) for tag in furigana_span.find_all("rt") if tag.get_text(strip=True)]
+                else:
+                    furigana_parts = self._collect_nonempty_text(furigana_span.find_all("span"))
+                    if not furigana_parts:
+                        collected = furigana_span.get_text(separator="", strip=True)
+                        if collected:
+                            furigana_parts = [collected]
+
+            if text_span:
+                text_value = self._normalized_text(text_span.get_text(separator="", strip=True))
+                child_spans = text_span.find_all("span")
+                if not child_spans and furigana_parts:
+                    direct_reading = "".join(furigana_parts)
+                    if direct_reading:
+                        self.logger.debug(f"Extracted full reading from plain furigana: '{direct_reading}'")
+                        return direct_reading
+
+                okurigana_chars = []
+                for span in child_spans:
+                    span_text = self._normalized_text(span.get_text(separator="", strip=True))
+                    if span_text:
+                        okurigana_chars.extend(list(span_text))
+
+                furigana_queue = list(furigana_parts)
+                reading = ""
+
+                for char in text_value:
+                    if okurigana_chars and char == okurigana_chars[0]:
+                        reading += okurigana_chars.pop(0)
+                        continue
+
+                    if self._is_kana_char(char):
+                        reading += char
+                        continue
+
+                    if furigana_queue:
+                        reading += furigana_queue.pop(0)
+                        continue
+
+                        # If we reach here, the character is not kana and there
+                        # is no furigana available to map to it. Do not include
+                        # the original kanji character in the reading output;
+                        # this preserves proper kana-only readings (okurigana
+                        # and distributed furigana). Skip the written-form
+                        # character instead of copying it into the reading.
+                        continue
+
                 if reading:
-                    self.logger.debug(f"Extracted reading: '{reading}'")
+                    self.logger.debug(f"Extracted full reading: '{reading}'")
                     return reading
 
-            self.logger.debug("Reading not found using furigana selector")
+            if furigana_parts:
+                furigana_text = "".join(furigana_parts)
+                self.logger.debug(f"Extracted furigana-only reading: '{furigana_text}'")
+                return furigana_text
+
+            if text_span:
+                reading_candidate = text_span.get_text(separator="", strip=True)
+                if reading_candidate:
+                    self.logger.debug(f"Fallback reading from text span: '{reading_candidate}'")
+                    return reading_candidate
+
+            self.logger.debug("Reading not found using furigana or text selectors")
             return ""
 
         except Exception as e:

@@ -31,7 +31,10 @@ class MainWindow(QMainWindow):
     """Passive view for the JPFM main UI."""
 
     search_requested = Signal(str, str)
+    parsed_cache_requested = Signal()
     import_history_requested = Signal()
+    start_parsing = Signal()
+    cancel_parsing = Signal()
     manual_word_added = Signal(str)
     word_removal_requested = Signal(str)
     settings_requested = Signal()
@@ -76,11 +79,16 @@ class MainWindow(QMainWindow):
         self.settings_button = QPushButton("Settings", self)
         self.settings_button.setObjectName("settings_button")
 
+        self.start_parsing_button = QPushButton("Start Parsing", self)
+        self.start_parsing_button.setObjectName("start_parsing_button")
+        self._parsing_active = False
+
         controls_layout.addWidget(self.source_select)
         controls_layout.addWidget(self.search_input)
         controls_layout.addWidget(self.search_button)
         controls_layout.addWidget(self.import_history_button)
         controls_layout.addWidget(self.settings_button)
+        controls_layout.addWidget(self.start_parsing_button)
 
         self.manual_word_input = QLineEdit(self)
         self.manual_word_input.setPlaceholderText("Add manual word")
@@ -115,6 +123,11 @@ class MainWindow(QMainWindow):
         self.results_view.setObjectName("results_view")
 
         layout.addLayout(controls_layout)
+        # Menu bar with File -> Parsed Cache
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu("File")
+        parsed_cache_action = file_menu.addAction("Parsed Cache")
+        parsed_cache_action.triggered.connect(lambda: self.parsed_cache_requested.emit())
         layout.addLayout(import_layout)
         layout.addWidget(QLabel("Word List", self))
         layout.addWidget(self.word_list_widget)
@@ -126,6 +139,7 @@ class MainWindow(QMainWindow):
         self.search_input.returnPressed.connect(self._on_search_clicked)
         self.import_history_button.clicked.connect(self._on_import_history_clicked)
         self.settings_button.clicked.connect(self._on_settings_clicked)
+        self.start_parsing_button.clicked.connect(self._on_start_parsing_clicked)
         self.manual_add_button.clicked.connect(self._on_manual_add_clicked)
         self.remove_word_button.clicked.connect(self._on_remove_word_clicked)
         self.manual_word_input.returnPressed.connect(self._on_manual_add_clicked)
@@ -163,6 +177,25 @@ class MainWindow(QMainWindow):
     def _on_settings_clicked(self) -> None:
         self.settings_requested.emit()
         self._show_settings_dialog()
+
+    def _on_start_parsing_clicked(self) -> None:
+        """Toggle the parsing session between starting and cancelling."""
+        if not getattr(self, "_parsing_active", False):
+            self.set_parsing_button_state(True)
+            self.start_parsing.emit()
+            self.set_import_progress(0, 0, "Starting parsing...")
+            return
+
+        self.cancel_parsing.emit()
+        self.set_parsing_button_state(False)
+
+    def set_parsing_button_state(self, active: bool) -> None:
+        """Set the start/cancel button state.
+
+        When `active` is True the button shows 'Cancel'; otherwise 'Start Parsing'.
+        """
+        self._parsing_active = bool(active)
+        self.start_parsing_button.setText("Cancel" if self._parsing_active else "Start Parsing")
 
     def _show_settings_dialog(self) -> None:
         dialog = QDialog(self)

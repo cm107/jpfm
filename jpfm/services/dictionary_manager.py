@@ -7,7 +7,7 @@ layer and delegates to source-specific parsers.
 """
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 from abc import ABC, abstractmethod
 
 import requests
@@ -201,7 +201,7 @@ class DictionaryManager:
 
             # Create parser and parse
             parser = factory.create_parser(html_content, url)
-            parsed_entry = parser.parse()
+            parsed_entry = parser.parse(word)
 
             if parsed_entry is None:
                 self.logger.warning(f"Parser returned None for {source}/{word}")
@@ -222,7 +222,11 @@ class DictionaryManager:
             return None
 
     def batch_get_entries(
-        self, source: str, words: List[str]
+        self,
+        source: str,
+        words: List[str],
+        progress_callback: Optional[Callable[[int, int, str], None]] = None,
+        cancel_check: Optional[Callable[[], bool]] = None,
     ) -> List[Dict[str, Any]]:
         """
         Retrieve multiple dictionary entries efficiently.
@@ -248,15 +252,27 @@ class DictionaryManager:
         cache_hits = 0
         cache_misses = 0
 
-        for word in words:
+        total = len(words)
+        for idx, word in enumerate(words):
+            # Respect cancellation requests
+            try:
+                if cancel_check and cancel_check():
+                    self.logger.info("Batch parsing cancelled by request")
+                    break
+            except Exception:
+                # Ignore cancel_check errors and continue
+                self.logger.debug("cancel_check callable raised an exception", exc_info=True)
+            # Report progress before processing the word
+            try:
+                if progress_callback:
+                    progress_callback(idx + 1, total, word)
+            except Exception:
+                # Don't let callback errors stop processing
+                self.logger.debug("Progress callback raised an exception", exc_info=True)
+
             entry = self.get_entry(source, word)
             if entry is not None:
                 entries.append(entry)
-                # Determine if it was a cache hit by checking if it's in cache
-                if self.storage.exists(source, word):
-                    # This would be a hit on second access; for initial batch
-                    # we rely on the logger output for statistics
-                    pass
 
         self.logger.info(
             f"Batch lookup for {source}: {len(entries)} entries retrieved"

@@ -345,8 +345,10 @@ class StorageService:
         """
         Clear cache entries.
 
-        If `source` is specified, only entries for that source are cleared.
-        Otherwise, all cache entries are cleared.
+        If `source` is specified, only entries for that source are cleared (only .json files).
+        Otherwise, all cache entries are cleared (only .json files in all source dirs).
+
+        This intentionally preserves other files such as .gitignore and .gitkeep.
 
         Args:
             source (str, optional): Parser source to clear. If None, clears all cache.
@@ -356,21 +358,30 @@ class StorageService:
         """
         try:
             if source:
-                # Clear a specific source
+                # Clear a specific source directory's JSON files only
                 source_dir = self.cache_dir / source
                 if source_dir.exists():
-                    import shutil
-
-                    shutil.rmtree(source_dir)
-                    self.logger.info(f"Cleared cache for source: {source}")
+                    removed = 0
+                    for json_file in source_dir.glob("*.json"):
+                        try:
+                            json_file.unlink()
+                            removed += 1
+                        except Exception:
+                            pass
+                    self.logger.info(f"Cleared {removed} cached json files for source: {source}")
             else:
-                # Clear all cache
-                import shutil
-
+                # Clear all .json files from every source directory
+                removed_total = 0
                 if self.cache_dir.exists():
-                    shutil.rmtree(self.cache_dir)
-                    self.cache_dir.mkdir(parents=True, exist_ok=True)
-                    self.logger.info("Cleared all cache")
+                    for child in self.cache_dir.iterdir():
+                        if child.is_dir():
+                            for json_file in child.glob("*.json"):
+                                try:
+                                    json_file.unlink()
+                                    removed_total += 1
+                                except Exception:
+                                    pass
+                self.logger.info(f"Cleared {removed_total} cached json files across all sources")
 
             return True
         except Exception as e:
